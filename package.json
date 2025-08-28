@@ -9,9 +9,10 @@
     "test": "node -c index.js && echo 'Syntax check passed'"
   },
   "dependencies": {
-    "express": "^4.21.2",
+    "axios": "^1.11.0",
     "body-parser": "^1.20.3",
-    "jsonwebtoken": "^9.0.2",
-    "dotenv": "^16.6.1"
+    "dotenv": "^16.6.1",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2"
   }
 }
