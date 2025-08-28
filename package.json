@@ -4,7 +4,9 @@
   "description": "Minimal ServiceM8 addon",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "build": "echo 'Build completed successfully - no compilation needed for Node.js app' && node -c index.js",
+    "test": "node -c index.js && echo 'Syntax check passed'"
   },
   "dependencies": {
     "express": "^4.21.2",

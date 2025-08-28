@@ -178,132 +178,15 @@ app.get('/pricing-form', (req, res) => {
     res.send(html);
 });
 
-// Configuration endpoint - return HTML instead of JSON
+// Configuration endpoint - serves pricing questions form
 app.get('/config', (req, res) => {
-    res.removeHeader('X-Frame-Options');
-    res.set('Content-Type', 'text/html; charset=utf-8');
-    res.send(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Addon Configuration</title>
-            <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1">
-            <style>
-                body { 
-                    font-family: Arial, sans-serif; 
-                    padding: 20px; 
-                    background: #f8f9fa;
-                }
-                .container {
-                    background: white;
-                    padding: 30px;
-                    border-radius: 8px;
-                    max-width: 800px;
-                    margin: 0 auto;
-                    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-                }
-                h1 { color: #28a745; }
-                h2 { color: #007bff; margin-top: 30px; }
-                .config-section { 
-                    background: #f8f9fa; 
-                    padding: 20px; 
-                    border-radius: 5px; 
-                    margin: 20px 0; 
-                }
-                .pricing-rule { 
-                    background: #e7f3ff; 
-                    padding: 15px; 
-                    border-radius: 5px; 
-                    margin: 10px 0; 
-                }
-                table { width: 100%; border-collapse: collapse; margin: 15px 0; }
-                th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
-                th { background: #f8f9fa; font-weight: bold; }
-                code { background: #f1f3f4; padding: 2px 6px; border-radius: 3px; }
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <h1>⚙️ ServiceM8 Staff Pricing Configuration</h1>
-                
-                <div class="config-section">
-                    <h2>📋 Addon Information</h2>
-                    <p><strong>Name:</strong> Staff Pricing Logic</p>
-                    <p><strong>Version:</strong> 1.0.0</p>
-                    <p><strong>Description:</strong> Automated pricing based on job details and staff assignments</p>
-                </div>
-                
-                <div class="config-section">
-                    <h2>💰 Base Pricing Rules</h2>
-                    <table>
-                        <tr><th>Job Type</th><th>Base Rate (£/hr)</th><th>Multiplier</th></tr>
-                        <tr><td>Plumbing</td><td>£120</td><td>1.0x</td></tr>
-                        <tr><td>Electrical</td><td>£150</td><td>1.2x</td></tr>
-                        <tr><td>HVAC</td><td>£130</td><td>1.1x</td></tr>
-                        <tr><td>General</td><td>£100</td><td>1.0x</td></tr>
-                    </table>
-                </div>
-                
-                <div class="config-section">
-                    <h2>📈 Pricing Factors</h2>
-                    
-                    <div class="pricing-rule">
-                        <h3>🚨 Urgency Multipliers</h3>
-                        <p><strong>Emergency:</strong> 1.5x (50% surcharge)</p>
-                        <p><strong>Urgent:</strong> 1.2x (20% surcharge)</p>
-                        <p><strong>Standard:</strong> 1.0x (no surcharge)</p>
-                    </div>
-                    
-                    <div class="pricing-rule">
-                        <h3>⏰ Time Multipliers</h3>
-                        <p><strong>After Hours:</strong> 1.4x (40% surcharge)</p>
-                        <p><strong>Weekend:</strong> 1.3x (30% surcharge)</p>
-                        <p><strong>Business Hours:</strong> 1.0x (no surcharge)</p>
-                    </div>
-                    
-                    <div class="pricing-rule">
-                        <h3>🔧 Complexity Multipliers</h3>
-                        <p><strong>Complex:</strong> 1.8x</p>
-                        <p><strong>Medium:</strong> 1.2x</p>
-                        <p><strong>Simple:</strong> 1.0x</p>
-                    </div>
-                </div>
-                
-                <div class="config-section">
-                    <h2>👨‍🔧 Staff Skill Levels</h2>
-                    <table>
-                        <tr><th>Skill Level</th><th>Multiplier</th></tr>
-                        <tr><td>Expert</td><td>1.6x</td></tr>
-                        <tr><td>Senior</td><td>1.3x</td></tr>
-                        <tr><td>Junior</td><td>1.0x</td></tr>
-                        <tr><td>Trainee</td><td>0.8x</td></tr>
-                    </table>
-                </div>
-                
-                <div class="config-section">
-                    <h2>📝 Pricing Questions</h2>
-                    <p>The addon collects the following information to calculate pricing:</p>
-                    <ul>
-                        <li><strong>Job Complexity:</strong> Simple, Medium, Complex</li>
-                        <li><strong>Time of Day:</strong> Business Hours, After Hours</li>
-                        <li><strong>Day Type:</strong> Weekday, Weekend</li>
-                        <li><strong>Urgency:</strong> Standard, Urgent, Emergency</li>
-                        <li><strong>Estimated Hours:</strong> Numeric input</li>
-                    </ul>
-                </div>
-                
-                <div class="config-section">
-                    <h2>🔗 API Integration</h2>
-                    <p><strong>ServiceM8 API Base:</strong> <code>https://api.servicem8.com/api_1.0</code></p>
-                    <p><strong>Authentication:</strong> ${process.env.SERVICEM8_USERNAME ? 'Configured ✅' : 'Not configured ❌'}</p>
-                    <p><strong>Callback URL:</strong> <code>/addon/event</code></p>
-                    <p><strong>Webhook URL:</strong> <code>/webhook</code></p>
-                </div>
-            </div>
-        </body>
-        </html>
-    `);
+    res.json({
+        name: 'Staff Pricing Logic',
+        version: '1.0.0',
+        description: 'Automated pricing based on job details and staff assignments',
+        pricing_questions: COST_QUESTIONS,
+        current_rules: PRICING_RULES
+    });
 });
 
 // Manual cost calculation endpoint
@@ -903,8 +786,8 @@ app.post('/addon/event', async (req, res) => {
             </html>
         `;
         
-        // Send the HTML response
-        res.send(htmlResponse);
+        // Send the HTML response in ServiceM8 format
+        res.json({ eventResponse: htmlResponse });
         
     } catch (error) {
         console.error('Addon event error:', error);
@@ -933,67 +816,6 @@ app.post('/addon/event', async (req, res) => {
             </html>
         `);
     }
-});
-
-// GET handler for addon event endpoint (for testing)
-app.get('/addon/event', (req, res) => {
-    res.removeHeader('X-Frame-Options');
-    res.set('Content-Type', 'text/html; charset=utf-8');
-    res.send(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>ServiceM8 Addon Event - GET Test</title>
-            <meta charset="utf-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1">
-            <style>
-                body { 
-                    font-family: Arial, sans-serif; 
-                    padding: 20px; 
-                    background: #f8f9fa;
-                }
-                .container {
-                    background: white;
-                    padding: 30px;
-                    border-radius: 8px;
-                    max-width: 600px;
-                    margin: 0 auto;
-                    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-                }
-                .warning { background: #fff3cd; color: #856404; padding: 15px; border-radius: 5px; margin: 20px 0; }
-                .info { background: #e7f3ff; color: #0c5460; padding: 15px; border-radius: 5px; margin: 20px 0; }
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <h1>⚠️ ServiceM8 Addon Event Endpoint</h1>
-                
-                <div class="warning">
-                    <h3>GET Request Detected</h3>
-                    <p>This endpoint normally receives POST requests from ServiceM8 with JWT tokens.</p>
-                    <p>You're seeing this because you visited the URL directly (GET request).</p>
-                </div>
-                
-                <div class="info">
-                    <h3>🔧 Endpoint Information</h3>
-                    <p><strong>URL:</strong> /addon/event</p>
-                    <p><strong>Expected Method:</strong> POST</p>
-                    <p><strong>Expected Content:</strong> JWT token from ServiceM8</p>
-                    <p><strong>Response:</strong> HTML page for iframe display</p>
-                </div>
-                
-                <div class="info">
-                    <h3>📊 Environment Status</h3>
-                    <p><strong>App Secret:</strong> ${process.env.SERVICEM8_APP_SECRET ? 'Configured ✅' : 'Missing ❌'}</p>
-                    <p><strong>Timestamp:</strong> ${new Date().toISOString()}</p>
-                    <p><strong>Server:</strong> Running and ready to receive ServiceM8 events</p>
-                </div>
-                
-                <p><a href="/">← Back to Home</a></p>
-            </div>
-        </body>
-        </html>
-    `);
 });
 
 // Serve addon icon
