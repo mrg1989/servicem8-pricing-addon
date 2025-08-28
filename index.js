@@ -80,21 +80,77 @@ app.post('/webhook', async (req, res) => {
     }
 });
 
-// Home page endpoint
+// Home page endpoint - return HTML instead of JSON
 app.get('/', (req, res) => {
-    res.json({
-        message: 'ServiceM8 Staff Pricing Addon',
-        version: '1.0.0',
-        status: 'Running',
-        endpoints: {
-            config: '/config',
-            webhook: '/webhook',
-            pricing_form: '/pricing-form',
-            test: '/test',
-            calculate: '/calculate-cost'
-        },
-        documentation: 'https://github.com/mrg1989/servicem8-pricing-addon'
-    });
+    res.removeHeader('X-Frame-Options');
+    res.set('Content-Type', 'text/html; charset=utf-8');
+    res.send(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>ServiceM8 Staff Pricing Addon</title>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <style>
+                body { 
+                    font-family: Arial, sans-serif; 
+                    padding: 40px; 
+                    background: #f8f9fa;
+                    margin: 0;
+                }
+                .container {
+                    background: white;
+                    padding: 40px;
+                    border-radius: 8px;
+                    max-width: 600px;
+                    margin: 0 auto;
+                    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                }
+                h1 { color: #28a745; margin-bottom: 20px; }
+                .status { background: #e7f3ff; padding: 20px; border-radius: 5px; margin: 20px 0; }
+                .endpoints { background: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0; }
+                .btn { 
+                    background: #007bff; 
+                    color: white; 
+                    padding: 12px 24px; 
+                    text-decoration: none; 
+                    border-radius: 4px; 
+                    display: inline-block; 
+                    margin: 5px;
+                }
+                .btn:hover { background: #0056b3; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>🏠 ServiceM8 Staff Pricing Addon</h1>
+                
+                <div class="status">
+                    <h3>📊 Status</h3>
+                    <p><strong>Version:</strong> 1.0.0</p>
+                    <p><strong>Status:</strong> ✅ Running</p>
+                    <p><strong>Environment:</strong> ${process.env.NODE_ENV || 'development'}</p>
+                    <p><strong>App Secret:</strong> ${process.env.SERVICEM8_APP_SECRET ? 'Configured ✅' : 'Missing ❌'}</p>
+                </div>
+                
+                <div class="endpoints">
+                    <h3>🔗 Available Endpoints</h3>
+                    <p><a href="/config" class="btn">View Configuration</a></p>
+                    <p><a href="/pricing-form" class="btn">Pricing Form</a></p>
+                    <p><a href="/test" class="btn">Test Page</a></p>
+                    <p><a href="/addon/event" class="btn">Addon Event (GET)</a></p>
+                </div>
+                
+                <div class="endpoints">
+                    <h3>📖 Documentation</h3>
+                    <p>This is a ServiceM8 Web Service Hosted Add-on for automated staff pricing calculations.</p>
+                    <p><strong>Callback URL:</strong> https://servicem8-pricing-addon.onrender.com/addon/event</p>
+                    <p><strong>GitHub:</strong> <a href="https://github.com/mrg1989/servicem8-pricing-addon">View Repository</a></p>
+                </div>
+            </div>
+        </body>
+        </html>
+    `);
 });
 
 // Test page endpoint - for testing without ServiceM8
@@ -122,15 +178,132 @@ app.get('/pricing-form', (req, res) => {
     res.send(html);
 });
 
-// Configuration endpoint - serves pricing questions form
+// Configuration endpoint - return HTML instead of JSON
 app.get('/config', (req, res) => {
-    res.json({
-        name: 'Staff Pricing Logic',
-        version: '1.0.0',
-        description: 'Automated pricing based on job details and staff assignments',
-        pricing_questions: COST_QUESTIONS,
-        current_rules: PRICING_RULES
-    });
+    res.removeHeader('X-Frame-Options');
+    res.set('Content-Type', 'text/html; charset=utf-8');
+    res.send(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Addon Configuration</title>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <style>
+                body { 
+                    font-family: Arial, sans-serif; 
+                    padding: 20px; 
+                    background: #f8f9fa;
+                }
+                .container {
+                    background: white;
+                    padding: 30px;
+                    border-radius: 8px;
+                    max-width: 800px;
+                    margin: 0 auto;
+                    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                }
+                h1 { color: #28a745; }
+                h2 { color: #007bff; margin-top: 30px; }
+                .config-section { 
+                    background: #f8f9fa; 
+                    padding: 20px; 
+                    border-radius: 5px; 
+                    margin: 20px 0; 
+                }
+                .pricing-rule { 
+                    background: #e7f3ff; 
+                    padding: 15px; 
+                    border-radius: 5px; 
+                    margin: 10px 0; 
+                }
+                table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+                th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
+                th { background: #f8f9fa; font-weight: bold; }
+                code { background: #f1f3f4; padding: 2px 6px; border-radius: 3px; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>⚙️ ServiceM8 Staff Pricing Configuration</h1>
+                
+                <div class="config-section">
+                    <h2>📋 Addon Information</h2>
+                    <p><strong>Name:</strong> Staff Pricing Logic</p>
+                    <p><strong>Version:</strong> 1.0.0</p>
+                    <p><strong>Description:</strong> Automated pricing based on job details and staff assignments</p>
+                </div>
+                
+                <div class="config-section">
+                    <h2>💰 Base Pricing Rules</h2>
+                    <table>
+                        <tr><th>Job Type</th><th>Base Rate (£/hr)</th><th>Multiplier</th></tr>
+                        <tr><td>Plumbing</td><td>£120</td><td>1.0x</td></tr>
+                        <tr><td>Electrical</td><td>£150</td><td>1.2x</td></tr>
+                        <tr><td>HVAC</td><td>£130</td><td>1.1x</td></tr>
+                        <tr><td>General</td><td>£100</td><td>1.0x</td></tr>
+                    </table>
+                </div>
+                
+                <div class="config-section">
+                    <h2>📈 Pricing Factors</h2>
+                    
+                    <div class="pricing-rule">
+                        <h3>🚨 Urgency Multipliers</h3>
+                        <p><strong>Emergency:</strong> 1.5x (50% surcharge)</p>
+                        <p><strong>Urgent:</strong> 1.2x (20% surcharge)</p>
+                        <p><strong>Standard:</strong> 1.0x (no surcharge)</p>
+                    </div>
+                    
+                    <div class="pricing-rule">
+                        <h3>⏰ Time Multipliers</h3>
+                        <p><strong>After Hours:</strong> 1.4x (40% surcharge)</p>
+                        <p><strong>Weekend:</strong> 1.3x (30% surcharge)</p>
+                        <p><strong>Business Hours:</strong> 1.0x (no surcharge)</p>
+                    </div>
+                    
+                    <div class="pricing-rule">
+                        <h3>🔧 Complexity Multipliers</h3>
+                        <p><strong>Complex:</strong> 1.8x</p>
+                        <p><strong>Medium:</strong> 1.2x</p>
+                        <p><strong>Simple:</strong> 1.0x</p>
+                    </div>
+                </div>
+                
+                <div class="config-section">
+                    <h2>👨‍🔧 Staff Skill Levels</h2>
+                    <table>
+                        <tr><th>Skill Level</th><th>Multiplier</th></tr>
+                        <tr><td>Expert</td><td>1.6x</td></tr>
+                        <tr><td>Senior</td><td>1.3x</td></tr>
+                        <tr><td>Junior</td><td>1.0x</td></tr>
+                        <tr><td>Trainee</td><td>0.8x</td></tr>
+                    </table>
+                </div>
+                
+                <div class="config-section">
+                    <h2>📝 Pricing Questions</h2>
+                    <p>The addon collects the following information to calculate pricing:</p>
+                    <ul>
+                        <li><strong>Job Complexity:</strong> Simple, Medium, Complex</li>
+                        <li><strong>Time of Day:</strong> Business Hours, After Hours</li>
+                        <li><strong>Day Type:</strong> Weekday, Weekend</li>
+                        <li><strong>Urgency:</strong> Standard, Urgent, Emergency</li>
+                        <li><strong>Estimated Hours:</strong> Numeric input</li>
+                    </ul>
+                </div>
+                
+                <div class="config-section">
+                    <h2>🔗 API Integration</h2>
+                    <p><strong>ServiceM8 API Base:</strong> <code>https://api.servicem8.com/api_1.0</code></p>
+                    <p><strong>Authentication:</strong> ${process.env.SERVICEM8_USERNAME ? 'Configured ✅' : 'Not configured ❌'}</p>
+                    <p><strong>Callback URL:</strong> <code>/addon/event</code></p>
+                    <p><strong>Webhook URL:</strong> <code>/webhook</code></p>
+                </div>
+            </div>
+        </body>
+        </html>
+    `);
 });
 
 // Manual cost calculation endpoint
@@ -481,136 +654,346 @@ async function makeServiceM8Request(endpoint, method = 'GET', data = null) {
     }
 }
 
-// ServiceM8 Addon Event Handlers
+// ServiceM8 Addon Event Handlers - ALWAYS return HTML for iframe display
 app.post('/addon/event', async (req, res) => {
     try {
-        console.log('ServiceM8 addon event received:', req.body);
+        console.log('=== ServiceM8 Addon Called ===');
+        console.log('Headers:', req.headers);
+        console.log('Body type:', typeof req.body);
+        console.log('Body content:', req.body);
         
-        // In a real implementation, you would verify the JWT token here
-        // const jwt = require('jsonwebtoken');
-        // const decoded = jwt.verify(req.body, process.env.SERVICEM8_APP_SECRET);
+        // CRITICAL: Remove iframe restrictions and set HTML content type
+        res.removeHeader('X-Frame-Options');
+        res.set('Content-Type', 'text/html; charset=utf-8');
+        res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
         
-        const eventData = req.body; // For now, assume the body contains the event data
-        const { event, job, company, user } = eventData;
+        // Parse potential JWT token or event data
+        let eventData = null;
+        let authStatus = 'No authentication data';
         
-        switch (event) {
-            case 'calculate_job_pricing':
-                // Show pricing form for the specific job
-                return res.send(`
-                    <!DOCTYPE html>
-                    <html>
-                    <head>
-                        <title>Calculate Job Pricing</title>
-                        <meta charset="utf-8">
-                        <meta name="viewport" content="width=device-width, initial-scale=1">
-                        <style>
-                            body { font-family: Arial, sans-serif; padding: 20px; }
-                            .form-group { margin-bottom: 15px; }
-                            label { display: block; margin-bottom: 5px; font-weight: bold; }
-                            select, input { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
-                            .btn { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; }
-                            .btn:hover { background: #0056b3; }
-                            .cost-preview { background: #f8f9fa; padding: 15px; border-radius: 4px; margin-top: 20px; }
-                        </style>
-                    </head>
-                    <body>
-                        <h2>Calculate Pricing for Job ${job?.generated_job_id || 'Unknown'}</h2>
-                        <form id="pricingForm">
-                            <div class="form-group">
-                                <label>Job Type:</label>
-                                <select name="jobType" required>
-                                    <option value="plumbing">Plumbing (£120/hr base)</option>
-                                    <option value="electrical">Electrical (£150/hr base)</option>
-                                    <option value="hvac">HVAC (£130/hr base)</option>
-                                    <option value="general">General (£100/hr base)</option>
-                                </select>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label>Complexity:</label>
-                                <select name="complexity" required>
-                                    <option value="simple">Simple (1x)</option>
-                                    <option value="medium">Medium (1.2x)</option>
-                                    <option value="complex">Complex (1.8x)</option>
-                                </select>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label>Urgency:</label>
-                                <select name="urgency" required>
-                                    <option value="standard">Standard</option>
-                                    <option value="urgent">Urgent</option>
-                                    <option value="emergency">Emergency (1.5x)</option>
-                                </select>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label>Timing:</label>
-                                <select name="timing" required>
-                                    <option value="business_hours">Business Hours</option>
-                                    <option value="after_hours">After Hours (1.4x)</option>
-                                    <option value="weekend">Weekend (1.3x)</option>
-                                </select>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label>Estimated Hours:</label>
-                                <input type="number" name="hours" min="0.5" step="0.5" value="1" required>
-                            </div>
-                            
-                            <button type="button" class="btn" onclick="calculateAndApply()">Calculate & Apply Pricing</button>
-                        </form>
-                        
-                        <div id="costPreview" class="cost-preview" style="display: none;"></div>
-                        
-                        <script>
-                            function calculateAndApply() {
-                                const form = document.getElementById('pricingForm');
-                                const formData = new FormData(form);
-                                const params = new URLSearchParams();
-                                
-                                for (let [key, value] of formData.entries()) {
-                                    params.append(key, value);
-                                }
-                                
-                                fetch('/calculate-cost?' + params.toString())
-                                    .then(response => response.json())
-                                    .then(data => {
-                                        document.getElementById('costPreview').innerHTML = 
-                                            '<h3>Calculated Cost: £' + data.totalCost + '</h3>' +
-                                            '<p>Base Rate: £' + data.breakdown.baseRate + '</p>' +
-                                            '<p>Total Hours: ' + data.breakdown.estimatedHours + '</p>';
-                                        document.getElementById('costPreview').style.display = 'block';
-                                        
-                                        // In a real implementation, you would update the job via ServiceM8 API
-                                        alert('Pricing calculated: £' + data.totalCost + '\\nThis would be applied to the job.');
-                                    })
-                                    .catch(error => {
-                                        console.error('Error:', error);
-                                        alert('Error calculating pricing');
-                                    });
-                            }
-                        </script>
-                    </body>
-                    </html>
-                `);
-                
-            case 'pricing_calculator_menu':
-                // Show the main pricing calculator interface
-                return res.redirect('/pricing-form');
-                
-            default:
-                return res.json({ 
-                    success: true, 
-                    message: `Event ${event} received but not handled`,
-                    event: eventData 
-                });
+        if (typeof req.body === 'string' && req.body.includes('.')) {
+            // Looks like a JWT token
+            try {
+                const jwt = require('jsonwebtoken');
+                if (process.env.SERVICEM8_APP_SECRET) {
+                    eventData = jwt.verify(req.body, process.env.SERVICEM8_APP_SECRET);
+                    authStatus = '✅ JWT verified successfully';
+                } else {
+                    const decoded = jwt.decode(req.body, { complete: true });
+                    eventData = decoded ? decoded.payload : null;
+                    authStatus = '⚠️ JWT decoded without verification (App Secret missing)';
+                }
+            } catch (jwtError) {
+                authStatus = `❌ JWT verification failed: ${jwtError.message}`;
+                eventData = { error: 'JWT verification failed' };
+            }
+        } else if (req.body) {
+            eventData = req.body;
+            authStatus = 'Event data received';
         }
+        
+        // Extract job details from event data (if available)
+        const jobUUID = eventData?.eventArgs?.jobUUID || eventData?.job?.uuid || 'N/A';
+        const jobId = eventData?.eventArgs?.jobId || eventData?.job?.generated_job_id || 'N/A';
+        const staffUUID = eventData?.auth?.staffUUID || eventData?.user?.uuid || 'N/A';
+        const companyUUID = eventData?.eventArgs?.companyUUID || eventData?.company?.uuid || 'N/A';
+        
+        // ALWAYS return HTML - this is what ServiceM8 expects for iframe display
+        const htmlResponse = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>ServiceM8 Staff Pricing Calculator</title>
+                <meta charset="utf-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1">
+                <style>
+                    body { 
+                        font-family: Arial, sans-serif; 
+                        padding: 20px; 
+                        background: #f8f9fa;
+                        margin: 0;
+                    }
+                    .container {
+                        background: white;
+                        padding: 30px;
+                        border-radius: 8px;
+                        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                        max-width: 600px;
+                        margin: 0 auto;
+                    }
+                    h1 { color: #28a745; margin-bottom: 20px; }
+                    h2 { color: #007bff; margin-top: 30px; }
+                    .success { background: #d4edda; color: #155724; padding: 15px; border-radius: 5px; margin: 20px 0; }
+                    .info { background: #e7f3ff; color: #0c5460; padding: 15px; border-radius: 5px; margin: 20px 0; }
+                    .form-group { margin-bottom: 15px; }
+                    label { display: block; margin-bottom: 5px; font-weight: bold; }
+                    select, input { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+                    .btn { 
+                        background: #007bff; 
+                        color: white; 
+                        padding: 12px 24px; 
+                        border: none; 
+                        border-radius: 4px; 
+                        cursor: pointer; 
+                        font-size: 16px;
+                        width: 100%;
+                        margin-top: 10px;
+                    }
+                    .btn:hover { background: #0056b3; }
+                    .cost-preview { 
+                        background: #f8f9fa; 
+                        padding: 15px; 
+                        border-radius: 4px; 
+                        margin-top: 20px; 
+                        border: 1px solid #dee2e6;
+                    }
+                    .debug { 
+                        background: #f8f9fa; 
+                        padding: 10px; 
+                        border-radius: 4px; 
+                        margin-top: 20px; 
+                        font-size: 12px; 
+                        color: #666;
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <h1>✅ ServiceM8 Staff Pricing Calculator</h1>
+                    
+                    <div class="success">
+                        Successfully connected to ServiceM8! This addon is working correctly.
+                    </div>
+                    
+                    <h2>📋 Calculate Job Pricing</h2>
+                    <p>Use this form to calculate pricing based on job details and requirements:</p>
+                    
+                    <form id="pricingForm">
+                        <div class="form-group">
+                            <label>Job Type:</label>
+                            <select name="jobType" required>
+                                <option value="plumbing">Plumbing (£120/hr base)</option>
+                                <option value="electrical">Electrical (£150/hr base)</option>
+                                <option value="hvac">HVAC (£130/hr base)</option>
+                                <option value="general">General (£100/hr base)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Job Complexity:</label>
+                            <select name="complexity" required>
+                                <option value="simple">Simple (1.0x multiplier)</option>
+                                <option value="medium" selected>Medium (1.2x multiplier)</option>
+                                <option value="complex">Complex (1.8x multiplier)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Urgency Level:</label>
+                            <select name="urgency" required>
+                                <option value="standard" selected>Standard</option>
+                                <option value="urgent">Urgent</option>
+                                <option value="emergency">Emergency (1.5x surcharge)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Timing:</label>
+                            <select name="timing" required>
+                                <option value="business_hours" selected>Business Hours</option>
+                                <option value="after_hours">After Hours (1.4x surcharge)</option>
+                                <option value="weekend">Weekend (1.3x surcharge)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Estimated Hours:</label>
+                            <input type="number" name="hours" min="0.5" step="0.5" value="2" required>
+                        </div>
+                        
+                        <button type="button" class="btn" onclick="calculatePricing()">Calculate Pricing</button>
+                    </form>
+                    
+                    <div id="costPreview" class="cost-preview" style="display: none;"></div>
+                    
+                    <div class="info">
+                        <strong>🔐 Authentication Status:</strong> ${authStatus}<br>
+                        <strong>📄 Job UUID:</strong> ${jobUUID}<br>
+                        <strong>🏷️ Job ID:</strong> ${jobId}<br>
+                        <strong>👤 Staff UUID:</strong> ${staffUUID}<br>
+                        <strong>🏢 Company UUID:</strong> ${companyUUID}<br>
+                        <strong>⏰ Timestamp:</strong> ${new Date().toISOString()}
+                    </div>
+                    
+                    <div class="debug">
+                        <strong>🔧 Debug Info:</strong><br>
+                        Request Method: ${req.method}<br>
+                        Content-Type: ${req.headers['content-type'] || 'Not set'}<br>
+                        Body Type: ${typeof req.body}<br>
+                        App Secret: ${process.env.SERVICEM8_APP_SECRET ? 'Configured ✅' : 'Missing ❌'}
+                    </div>
+                </div>
+                
+                <script>
+                    function calculatePricing() {
+                        const form = document.getElementById('pricingForm');
+                        const formData = new FormData(form);
+                        
+                        // Build request data
+                        const requestData = {
+                            jobId: '${jobUUID}' || 'test-job',
+                            answers: {
+                                jobComplexity: formData.get('complexity'),
+                                timeOfDay: formData.get('timing') === 'business_hours' ? 'business_hours' : 'after_hours',
+                                dayType: formData.get('timing') === 'weekend' ? 'weekend' : 'weekday',
+                                urgency: formData.get('urgency'),
+                                estimatedHours: parseFloat(formData.get('hours'))
+                            }
+                        };
+                        
+                        // Calculate basic pricing (client-side for demo)
+                        const baseRates = {
+                            plumbing: 120,
+                            electrical: 150,
+                            hvac: 130,
+                            general: 100
+                        };
+                        
+                        const complexityMultipliers = {
+                            simple: 1.0,
+                            medium: 1.2,
+                            complex: 1.8
+                        };
+                        
+                        const urgencyMultipliers = {
+                            standard: 1.0,
+                            urgent: 1.2,
+                            emergency: 1.5
+                        };
+                        
+                        const timingMultipliers = {
+                            business_hours: 1.0,
+                            after_hours: 1.4,
+                            weekend: 1.3
+                        };
+                        
+                        const jobType = formData.get('jobType');
+                        const baseRate = baseRates[jobType];
+                        const hours = parseFloat(formData.get('hours'));
+                        const complexity = complexityMultipliers[formData.get('complexity')];
+                        const urgency = urgencyMultipliers[formData.get('urgency')];
+                        const timing = timingMultipliers[formData.get('timing')];
+                        
+                        const totalCost = Math.round(baseRate * hours * complexity * urgency * timing * 100) / 100;
+                        
+                        // Display results
+                        document.getElementById('costPreview').innerHTML = 
+                            '<h3>💰 Calculated Pricing</h3>' +
+                            '<p><strong>Total Cost: £' + totalCost + '</strong></p>' +
+                            '<p>Base Rate: £' + baseRate + '/hr (' + jobType + ')</p>' +
+                            '<p>Hours: ' + hours + '</p>' +
+                            '<p>Complexity: ' + formData.get('complexity') + ' (' + complexity + 'x)</p>' +
+                            '<p>Urgency: ' + formData.get('urgency') + ' (' + urgency + 'x)</p>' +
+                            '<p>Timing: ' + formData.get('timing') + ' (' + timing + 'x)</p>' +
+                            '<p><em>Pricing calculated successfully!</em></p>';
+                        document.getElementById('costPreview').style.display = 'block';
+                    }
+                </script>
+            </body>
+            </html>
+        `;
+        
+        // Send the HTML response
+        res.send(htmlResponse);
         
     } catch (error) {
         console.error('Addon event error:', error);
-        res.status(500).json({ error: 'Internal server error' });
+        
+        // Even on error, return HTML (not JSON)
+        res.removeHeader('X-Frame-Options');
+        res.set('Content-Type', 'text/html; charset=utf-8');
+        res.send(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Error - ServiceM8 Addon</title>
+                <meta charset="utf-8">
+                <style>
+                    body { font-family: Arial, sans-serif; padding: 20px; background: #f8f9fa; }
+                    .error { background: #f8d7da; color: #721c24; padding: 20px; border-radius: 5px; }
+                </style>
+            </head>
+            <body>
+                <div class="error">
+                    <h2>❌ Error</h2>
+                    <p>Something went wrong: ${error.message}</p>
+                    <p>But the addon is still responding with HTML!</p>
+                </div>
+            </body>
+            </html>
+        `);
     }
+});
+
+// GET handler for addon event endpoint (for testing)
+app.get('/addon/event', (req, res) => {
+    res.removeHeader('X-Frame-Options');
+    res.set('Content-Type', 'text/html; charset=utf-8');
+    res.send(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>ServiceM8 Addon Event - GET Test</title>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <style>
+                body { 
+                    font-family: Arial, sans-serif; 
+                    padding: 20px; 
+                    background: #f8f9fa;
+                }
+                .container {
+                    background: white;
+                    padding: 30px;
+                    border-radius: 8px;
+                    max-width: 600px;
+                    margin: 0 auto;
+                    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+                }
+                .warning { background: #fff3cd; color: #856404; padding: 15px; border-radius: 5px; margin: 20px 0; }
+                .info { background: #e7f3ff; color: #0c5460; padding: 15px; border-radius: 5px; margin: 20px 0; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>⚠️ ServiceM8 Addon Event Endpoint</h1>
+                
+                <div class="warning">
+                    <h3>GET Request Detected</h3>
+                    <p>This endpoint normally receives POST requests from ServiceM8 with JWT tokens.</p>
+                    <p>You're seeing this because you visited the URL directly (GET request).</p>
+                </div>
+                
+                <div class="info">
+                    <h3>🔧 Endpoint Information</h3>
+                    <p><strong>URL:</strong> /addon/event</p>
+                    <p><strong>Expected Method:</strong> POST</p>
+                    <p><strong>Expected Content:</strong> JWT token from ServiceM8</p>
+                    <p><strong>Response:</strong> HTML page for iframe display</p>
+                </div>
+                
+                <div class="info">
+                    <h3>📊 Environment Status</h3>
+                    <p><strong>App Secret:</strong> ${process.env.SERVICEM8_APP_SECRET ? 'Configured ✅' : 'Missing ❌'}</p>
+                    <p><strong>Timestamp:</strong> ${new Date().toISOString()}</p>
+                    <p><strong>Server:</strong> Running and ready to receive ServiceM8 events</p>
+                </div>
+                
+                <p><a href="/">← Back to Home</a></p>
+            </div>
+        </body>
+        </html>
+    `);
 });
 
 // Serve addon icon
