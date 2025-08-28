@@ -2,11 +2,11 @@
   "name": "servicem8-minimal-addon",
   "version": "1.0.0",
   "description": "Minimal ServiceM8 addon",
-  "main": "index.js",
+  "main": "index-new.js",
   "scripts": {
-    "start": "node index.js",
-    "build": "echo 'Build completed successfully - no compilation needed for Node.js app' && node -c index.js",
-    "test": "node -c index.js && echo 'Syntax check passed'"
+    "start": "node index-new.js",
+    "build": "echo 'Build completed successfully - no compilation needed for Node.js app' && node -c index-new.js",
+    "test": "node -c index-new.js && echo 'Syntax check passed'"
   },
   "dependencies": {
     "axios": "^1.11.0",
