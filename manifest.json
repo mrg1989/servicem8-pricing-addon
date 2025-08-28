@@ -1,0 +1,78 @@
+{
+  "name": "Staff Pricing Logic",
+  "version": "1.0.0",
+  "description": "ServiceM8 addon for staff pricing logic with interactive pricing calculator",
+  "author": "Your Name",
+  "type": "web_service",
+  "app_id": "your_app_id_here",
+  "app_secret": "your_app_secret_here",
+  "endpoints": {
+    "webhook": "/webhook",
+    "configuration": "/config",
+    "pricing_form": "/pricing-form",
+    "calculate": "/calculate-cost"
+  },
+  "permissions": [
+    "read_jobs",
+    "read_staff",
+    "read_customers", 
+    "write_jobs",
+    "read_jobcategory",
+    "write_invoiceitem"
+  ],
+  "webhook_events": [
+    "job.created",
+    "job.updated",
+    "staff.updated"
+  ],
+  "ui_elements": {
+    "buttons": [
+      {
+        "id": "calculate_pricing",
+        "label": "Calculate Pricing",
+        "description": "Calculate job pricing based on complexity and factors",
+        "location": "job_detail",
+        "action": {
+          "type": "form",
+          "url": "/pricing-form",
+          "method": "GET",
+          "target": "modal"
+        },
+        "icon": "calculator",
+        "color": "primary"
+      },
+      {
+        "id": "recalculate_pricing", 
+        "label": "Recalculate",
+        "description": "Recalculate pricing with new parameters",
+        "location": "job_detail",
+        "action": {
+          "type": "form",
+          "url": "/pricing-form",
+          "method": "GET",
+          "target": "modal"
+        },
+        "icon": "refresh",
+        "color": "secondary",
+        "condition": {
+          "field": "custom_pricing_applied",
+          "value": true
+        }
+      }
+    ],
+    "menu_items": [
+      {
+        "id": "pricing_settings",
+        "label": "Pricing Settings",
+        "description": "Configure pricing rules and rates",
+        "location": "settings",
+        "action": {
+          "type": "redirect",
+          "url": "/config",
+          "target": "new_tab"
+        },
+        "icon": "settings"
+      }
+    ]
+  }
+}

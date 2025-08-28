@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test ServiceM8 Addon</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .test-section { background: #f5f5f5; padding: 20px; margin: 20px 0; border-radius: 8px; }
+        button { padding: 10px 20px; margin: 10px; background: #007cba; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #005a87; }
+        .result { background: white; padding: 15px; margin: 10px 0; border-left: 4px solid #007cba; }
+        pre { background: #f8f8f8; padding: 10px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🧪 ServiceM8 Addon Test Suite</h1>
+    
+    <div class="test-section">
+        <h2>1. Test Configuration Endpoint</h2>
+        <p>Check if the addon returns pricing rules and questions</p>
+        <button onclick="testConfig()">Test /config</button>
+        <div id="configResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. Test Pricing Form</h2>
+        <p>Open the pricing form (simulates clicking button in ServiceM8)</p>
+        <button onclick="openPricingForm()">Open Pricing Form</button>
+        <button onclick="openPricingFormWithJobId()">Open Form with Test Job ID</button>
+    </div>
+
+    <div class="test-section">
+        <h2>3. Test Cost Calculation</h2>
+        <p>Test the cost calculation API with sample data</p>
+        <button onclick="testCostCalculation()">Test Cost Calculation</button>
+        <div id="calcResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>4. Test Webhook (Manual)</h2>
+        <p>Simulate ServiceM8 sending a webhook when job is created</p>
+        <button onclick="testWebhook()">Send Test Webhook</button>
+        <div id="webhookResult"></div>
+    </div>
+
+    <script>
+        const BASE_URL = 'http://localhost:3000';
+
+        async function testConfig() {
+            try {
+                const response = await fetch(`${BASE_URL}/config`);
+                const data = await response.json();
+                document.getElementById('configResult').innerHTML = `
+                    <div class="result">
+                        <h4>✅ Config endpoint working!</h4>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    </div>
+                `;
+            } catch (error) {
+                document.getElementById('configResult').innerHTML = `
+                    <div class="result" style="border-left-color: red;">
+                        <h4>❌ Config test failed</h4>
+                        <p>Error: ${error.message}</p>
+                        <p>Make sure the addon server is running on port 3000</p>
+                    </div>
+                `;
+            }
+        }
+
+        function openPricingForm() {
+            window.open(`${BASE_URL}/pricing-form`, '_blank');
+        }
+
+        function openPricingFormWithJobId() {
+            const testJobId = 'test-job-12345';
+            window.open(`${BASE_URL}/pricing-form?job_id=${testJobId}`, '_blank');
+        }
+
+        async function testCostCalculation() {
+            const testData = {
+                jobId: 'test-job-12345',
+                answers: {
+                    jobComplexity: 'complex',
+                    timeOfDay: 'after_hours',
+                    dayType: 'weekend', 
+                    urgency: 'emergency',
+                    estimatedHours: 3
+                }
+            };
+
+            try {
+                const response = await fetch(`${BASE_URL}/calculate-cost`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(testData)
+                });
+                
+                const result = await response.json();
+                
+                document.getElementById('calcResult').innerHTML = `
+                    <div class="result">
+                        <h4>📊 Cost Calculation Result:</h4>
+                        <p><strong>Total Cost:</strong> $${result.calculation?.totalCost || 'Error'}</p>
+                        <pre>${JSON.stringify(result, null, 2)}</pre>
+                    </div>
+                `;
+            } catch (error) {
+                document.getElementById('calcResult').innerHTML = `
+                    <div class="result" style="border-left-color: red;">
+                        <h4>❌ Cost calculation failed</h4>
+                        <p>Error: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function testWebhook() {
+            const testWebhookData = {
+                event_type: 'job.created',
+                data: {
+                    uuid: 'test-job-12345',
+                    generated_job_id: 'JOB-001',
+                    staff_uuid: 'test-staff-456',
+                    category_uuid: 'test-category-789',
+                    estimated_hours: 2.5,
+                    created_at: new Date().toISOString()
+                }
+            };
+
+            try {
+                const response = await fetch(`${BASE_URL}/webhook`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(testWebhookData)
+                });
+                
+                const result = await response.json();
+                
+                document.getElementById('webhookResult').innerHTML = `
+                    <div class="result">
+                        <h4>🔗 Webhook Test Result:</h4>
+                        <p><strong>Status:</strong> ${result.success ? '✅ Success' : '❌ Failed'}</p>
+                        <pre>${JSON.stringify(result, null, 2)}</pre>
+                    </div>
+                `;
+            } catch (error) {
+                document.getElementById('webhookResult').innerHTML = `
+                    <div class="result" style="border-left-color: red;">
+                        <h4>❌ Webhook test failed</h4>
+                        <p>Error: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Auto-test config on page load
+        window.onload = function() {
+            testConfig();
+        };
+    </script>
+</body>
+</html>
