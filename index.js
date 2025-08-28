@@ -626,17 +626,64 @@ app.get('/oauth/start', (req, res) => {
     
     console.log('OAuth start:', { accountUuid, staffUuid });
     
-    // In a real implementation, you'd store these and redirect to ServiceM8 OAuth
-    // For now, we'll simulate a successful OAuth completion
-    res.redirect(`/oauth/complete?account_uuid=${accountUuid}&staff_uuid=${staffUuid}`);
+    // Store the account and staff UUIDs for the callback
+    // In production, you'd use a proper session store or database
+    const state = Buffer.from(JSON.stringify({ accountUuid, staffUuid })).toString('base64');
+    
+    // Redirect to ServiceM8's OAuth authorization endpoint
+    const authUrl = new URL('https://go.servicem8.com/oauth/authorize');
+    authUrl.searchParams.set('response_type', 'code');
+    authUrl.searchParams.set('client_id', process.env.SERVICEM8_APP_ID || 'your_app_id');
+    authUrl.searchParams.set('scope', 'read_jobs');
+    authUrl.searchParams.set('redirect_uri', 'https://servicem8-pricing-addon.onrender.com/oauth/complete');
+    authUrl.searchParams.set('state', state);
+    
+    console.log('Redirecting to ServiceM8 OAuth:', authUrl.toString());
+    res.redirect(authUrl.toString());
 });
 
 app.get('/oauth/complete', (req, res) => {
-    // This simulates successful OAuth completion
-    const accountUuid = req.query.account_uuid;
-    const staffUuid = req.query.staff_uuid;
+    // Handle the OAuth callback from ServiceM8
+    const code = req.query.code;
+    const state = req.query.state;
+    const error = req.query.error;
     
-    console.log('OAuth complete:', { accountUuid, staffUuid });
+    console.log('OAuth callback:', { code: code ? 'received' : 'missing', state, error });
+    
+    if (error) {
+        console.error('OAuth error:', error);
+        return res.status(400).send(`
+            <!DOCTYPE html>
+            <html>
+            <head><title>OAuth Error</title></head>
+            <body>
+                <h1>Authorization Failed</h1>
+                <p>Error: ${error}</p>
+                <p><a href="javascript:window.close()">Close Window</a></p>
+            </body>
+            </html>
+        `);
+    }
+    
+    if (!code) {
+        console.error('No authorization code received');
+        return res.status(400).send('No authorization code received');
+    }
+    
+    // Decode the state to get account and staff UUIDs
+    let accountUuid, staffUuid;
+    try {
+        const stateData = JSON.parse(Buffer.from(state, 'base64').toString());
+        accountUuid = stateData.accountUuid;
+        staffUuid = stateData.staffUuid;
+    } catch (err) {
+        console.error('Invalid state parameter:', err);
+        return res.status(400).send('Invalid state parameter');
+    }
+    
+    // Exchange the authorization code for an access token
+    // Note: You would implement the token exchange here
+    console.log('Would exchange code for token:', { code, accountUuid, staffUuid });
     
     res.send(`
         <!DOCTYPE html>

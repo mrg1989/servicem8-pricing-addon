@@ -13,16 +13,14 @@
       "type": "online",
       "entity": "job",
       "iconURL": "https://servicem8-pricing-addon.onrender.com/icon.png",
-      "event": "calculate_job_pricing",
-      "location": "modal"
+      "event": "calculate_job_pricing"
     },
     {
       "name": "Calculate Pricing",
       "type": "app",
       "entity": "job",
       "iconURL": "https://servicem8-pricing-addon.onrender.com/icon.png",
-      "event": "calculate_job_pricing",
-      "location": "window"
+      "event": "calculate_job_pricing"
     }
   ]
 }
