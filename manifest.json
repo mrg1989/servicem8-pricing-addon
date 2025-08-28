@@ -1,78 +1,40 @@
 {
-  "name": "Staff Pricing Logic",
-  "version": "1.0.0",
-  "description": "ServiceM8 addon for staff pricing logic with interactive pricing calculator",
-  "author": "Your Name",
-  "type": "web_service",
-  "app_id": "your_app_id_here",
-  "app_secret": "your_app_secret_here",
-  "endpoints": {
-    "webhook": "/webhook",
-    "configuration": "/config",
-    "pricing_form": "/pricing-form",
-    "calculate": "/calculate-cost"
+  "name": "Staff Pricing Calculator",
+  "version": "1.0",
+  "iconURL": "https://servicem8-pricing-addon.onrender.com/icon.png",
+  "supportURL": "https://github.com/mrg1989/servicem8-pricing-addon",
+  "supportEmail": "marvin@freeflo.co.uk",
+  "oauth": {
+    "scope": "read_jobs write_jobs read_clients"
   },
-  "permissions": [
-    "read_jobs",
-    "read_staff",
-    "read_customers", 
-    "write_jobs",
-    "read_jobcategory",
-    "write_invoiceitem"
+  "actions": [
+    {
+      "name": "Calculate Pricing",
+      "type": "online",
+      "entity": "job",
+      "iconURL": "https://servicem8-pricing-addon.onrender.com/icon.png",
+      "event": "calculate_job_pricing",
+      "location": "modal"
+    }
   ],
-  "webhook_events": [
-    "job.created",
-    "job.updated",
-    "staff.updated"
+  "menuItems": [
+    {
+      "name": "Pricing Calculator",
+      "type": "addon",
+      "iconURL": "https://servicem8-pricing-addon.onrender.com/icon.png",
+      "event": "pricing_calculator_menu"
+    }
   ],
-  "ui_elements": {
-    "buttons": [
-      {
-        "id": "calculate_pricing",
-        "label": "Calculate Pricing",
-        "description": "Calculate job pricing based on complexity and factors",
-        "location": "job_detail",
-        "action": {
-          "type": "form",
-          "url": "/pricing-form",
-          "method": "GET",
-          "target": "modal"
-        },
-        "icon": "calculator",
-        "color": "primary"
-      },
-      {
-        "id": "recalculate_pricing", 
-        "label": "Recalculate",
-        "description": "Recalculate pricing with new parameters",
-        "location": "job_detail",
-        "action": {
-          "type": "form",
-          "url": "/pricing-form",
-          "method": "GET",
-          "target": "modal"
-        },
-        "icon": "refresh",
-        "color": "secondary",
-        "condition": {
-          "field": "custom_pricing_applied",
-          "value": true
-        }
-      }
-    ],
-    "menu_items": [
-      {
-        "id": "pricing_settings",
-        "label": "Pricing Settings",
-        "description": "Configure pricing rules and rates",
-        "location": "settings",
-        "action": {
-          "type": "redirect",
-          "url": "/config",
-          "target": "new_tab"
-        },
-        "icon": "settings"
-      }
-    ]
-  }
+  "webhooks": [
+    {
+      "object": "job",
+      "fields": [
+        "job_address",
+        "billing_address",
+        "generated_job_id",
+        "job_description",
+        "total_cost"
+      ]
+    }
+  ]
 }

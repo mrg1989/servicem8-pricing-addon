@@ -481,6 +481,155 @@ async function makeServiceM8Request(endpoint, method = 'GET', data = null) {
     }
 }
 
+// ServiceM8 Addon Event Handlers
+app.post('/addon/event', async (req, res) => {
+    try {
+        console.log('ServiceM8 addon event received:', req.body);
+        
+        // In a real implementation, you would verify the JWT token here
+        // const jwt = require('jsonwebtoken');
+        // const decoded = jwt.verify(req.body, process.env.SERVICEM8_APP_SECRET);
+        
+        const eventData = req.body; // For now, assume the body contains the event data
+        const { event, job, company, user } = eventData;
+        
+        switch (event) {
+            case 'calculate_job_pricing':
+                // Show pricing form for the specific job
+                return res.send(`
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <title>Calculate Job Pricing</title>
+                        <meta charset="utf-8">
+                        <meta name="viewport" content="width=device-width, initial-scale=1">
+                        <style>
+                            body { font-family: Arial, sans-serif; padding: 20px; }
+                            .form-group { margin-bottom: 15px; }
+                            label { display: block; margin-bottom: 5px; font-weight: bold; }
+                            select, input { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+                            .btn { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; }
+                            .btn:hover { background: #0056b3; }
+                            .cost-preview { background: #f8f9fa; padding: 15px; border-radius: 4px; margin-top: 20px; }
+                        </style>
+                    </head>
+                    <body>
+                        <h2>Calculate Pricing for Job ${job?.generated_job_id || 'Unknown'}</h2>
+                        <form id="pricingForm">
+                            <div class="form-group">
+                                <label>Job Type:</label>
+                                <select name="jobType" required>
+                                    <option value="plumbing">Plumbing (£120/hr base)</option>
+                                    <option value="electrical">Electrical (£150/hr base)</option>
+                                    <option value="hvac">HVAC (£130/hr base)</option>
+                                    <option value="general">General (£100/hr base)</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Complexity:</label>
+                                <select name="complexity" required>
+                                    <option value="simple">Simple (1x)</option>
+                                    <option value="medium">Medium (1.2x)</option>
+                                    <option value="complex">Complex (1.8x)</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Urgency:</label>
+                                <select name="urgency" required>
+                                    <option value="standard">Standard</option>
+                                    <option value="urgent">Urgent</option>
+                                    <option value="emergency">Emergency (1.5x)</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Timing:</label>
+                                <select name="timing" required>
+                                    <option value="business_hours">Business Hours</option>
+                                    <option value="after_hours">After Hours (1.4x)</option>
+                                    <option value="weekend">Weekend (1.3x)</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Estimated Hours:</label>
+                                <input type="number" name="hours" min="0.5" step="0.5" value="1" required>
+                            </div>
+                            
+                            <button type="button" class="btn" onclick="calculateAndApply()">Calculate & Apply Pricing</button>
+                        </form>
+                        
+                        <div id="costPreview" class="cost-preview" style="display: none;"></div>
+                        
+                        <script>
+                            function calculateAndApply() {
+                                const form = document.getElementById('pricingForm');
+                                const formData = new FormData(form);
+                                const params = new URLSearchParams();
+                                
+                                for (let [key, value] of formData.entries()) {
+                                    params.append(key, value);
+                                }
+                                
+                                fetch('/calculate-cost?' + params.toString())
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        document.getElementById('costPreview').innerHTML = 
+                                            '<h3>Calculated Cost: £' + data.totalCost + '</h3>' +
+                                            '<p>Base Rate: £' + data.breakdown.baseRate + '</p>' +
+                                            '<p>Total Hours: ' + data.breakdown.estimatedHours + '</p>';
+                                        document.getElementById('costPreview').style.display = 'block';
+                                        
+                                        // In a real implementation, you would update the job via ServiceM8 API
+                                        alert('Pricing calculated: £' + data.totalCost + '\\nThis would be applied to the job.');
+                                    })
+                                    .catch(error => {
+                                        console.error('Error:', error);
+                                        alert('Error calculating pricing');
+                                    });
+                            }
+                        </script>
+                    </body>
+                    </html>
+                `);
+                
+            case 'pricing_calculator_menu':
+                // Show the main pricing calculator interface
+                return res.redirect('/pricing-form');
+                
+            default:
+                return res.json({ 
+                    success: true, 
+                    message: `Event ${event} received but not handled`,
+                    event: eventData 
+                });
+        }
+        
+    } catch (error) {
+        console.error('Addon event error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Serve addon icon
+app.get('/icon.png', (req, res) => {
+    // Send a simple SVG icon as PNG alternative
+    res.setHeader('Content-Type', 'image/svg+xml');
+    res.send(`
+        <svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+            <rect width="64" height="64" fill="#007bff" rx="8"/>
+            <text x="32" y="40" font-family="Arial, sans-serif" font-size="32" fill="white" text-anchor="middle">£</text>
+        </svg>
+    `);
+});
+
+// Serve manifest file
+app.get('/manifest.json', (req, res) => {
+    res.sendFile(path.join(__dirname, 'manifest.json'));
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`ServiceM8 Staff Pricing Addon running on port ${PORT}`);
