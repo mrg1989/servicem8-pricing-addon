@@ -4,8 +4,8 @@
   "description": "ServiceM8 addon for staff pricing logic",
   "main": "hello-world.js",
   "scripts": {
-    "start": "node index.js",
-    "dev": "nodemon index.js"
+    "start": "node hello-world.js",
+    "dev": "nodemon hello-world.js"
   },
   "dependencies": {
     "axios": "^1.11.0",
