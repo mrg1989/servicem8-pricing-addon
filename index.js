@@ -74,7 +74,11 @@ const createTestPage = (title, message, details = '') => `
 
 // Return HTML for ALL requests - no JSON anywhere
 app.get('/', (req, res) => {
-    res.set('Content-Type', 'text/html');
+    // Ensure iframe compatibility
+    res.removeHeader('X-Frame-Options');
+    res.set('Content-Type', 'text/html; charset=utf-8');
+    res.set('Cache-Control', 'no-cache');
+    
     res.send(createTestPage(
         '🏠 ServiceM8 Addon Home', 
         'Addon server is running!',
@@ -83,7 +87,11 @@ app.get('/', (req, res) => {
 });
 
 app.post('/addon/event', (req, res) => {
-    res.set('Content-Type', 'text/html');
+    // Ensure iframe compatibility
+    res.removeHeader('X-Frame-Options');
+    res.set('Content-Type', 'text/html; charset=utf-8');
+    res.set('Cache-Control', 'no-cache');
+    
     res.send(createTestPage(
         '🎯 Calculate Job Pricing', 
         'ServiceM8 successfully called the addon!',
@@ -98,7 +106,11 @@ app.post('/addon/event', (req, res) => {
 });
 
 app.get('/addon/event', (req, res) => {
-    res.set('Content-Type', 'text/html');
+    // Ensure iframe compatibility
+    res.removeHeader('X-Frame-Options');
+    res.set('Content-Type', 'text/html; charset=utf-8');
+    res.set('Cache-Control', 'no-cache');
+    
     res.send(createTestPage(
         '⚠️ GET Request to /addon/event', 
         'ServiceM8 sent a GET request (should be POST)',
@@ -113,7 +125,11 @@ app.get('/icon.png', (req, res) => {
 
 // Catch all other requests with HTML
 app.all('*', (req, res) => {
-    res.set('Content-Type', 'text/html');
+    // Ensure iframe compatibility
+    res.removeHeader('X-Frame-Options');
+    res.set('Content-Type', 'text/html; charset=utf-8');
+    res.set('Cache-Control', 'no-cache');
+    
     res.send(createTestPage(
         `📍 ${req.method} ${req.path}`, 
         'ServiceM8 called an unexpected URL',
