@@ -75,18 +75,26 @@ app.post('/addon/event', (req, res) => {
         
         console.log('Extracted data:', { jobUUID, staffUUID, accountUUID });
         
-        // Return SIMPLE HTML - this is what ServiceM8 expects
+        // Return HTML in ServiceM8 format - JSON with eventResponse containing HTML
         const simpleHTML = `<!DOCTYPE html>
 <html>
 <head>
     <title>ServiceM8 Pricing</title>
     <meta charset="utf-8">
+    <link rel="stylesheet" href="https://platform.servicem8.com/sdk/1.0/sdk.css">
+    <script src="https://platform.servicem8.com/sdk/1.0/sdk.js"></script>
     <style>
         body { font-family: Arial, sans-serif; padding: 20px; background: white; }
         h1 { color: green; }
         .status { background: #f0f8ff; padding: 15px; border-radius: 5px; margin: 10px 0; }
         .success { background: #d4edda; padding: 10px; border-radius: 3px; color: #155724; }
+        .btn { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin: 5px; }
     </style>
+    <script>
+        var client = SMClient.init();
+        // Resize the addon window
+        client.resizeWindow(600, 400);
+    </script>
 </head>
 <body>
     <h1>✅ ServiceM8 Addon Working!</h1>
@@ -103,43 +111,61 @@ app.post('/addon/event', (req, res) => {
     </div>
     
     <p>This addon is working correctly and receiving data from ServiceM8.</p>
+    <p>The response is now in the correct ServiceM8 format with eventResponse!</p>
+    
+    <button class="btn" onclick="client.closeWindow();">Close Window</button>
 </body>
 </html>`;
         
-        console.log('Sending HTML response...');
-        res.send(simpleHTML);
+        console.log('Sending response in ServiceM8 format...');
+        
+        // ServiceM8 expects JSON response with eventResponse containing HTML
+        const response = {
+            eventResponse: simpleHTML
+        };
+        
+        res.json(response);
         
     } catch (error) {
         console.error('ERROR in addon:', error);
         
-        // Even on error, return HTML
-        res.removeHeader('X-Frame-Options');
-        res.set('Content-Type', 'text/html; charset=utf-8');
-        res.send(`<!DOCTYPE html>
+        // Even on error, return JSON with HTML inside eventResponse
+        res.json({
+            eventResponse: `<!DOCTYPE html>
 <html>
 <head><title>Error</title></head>
 <body>
     <h1>Error</h1>
     <p>Something went wrong: ${error.message}</p>
-    <p>But HTML is still being returned!</p>
+    <p>But response is in correct ServiceM8 format!</p>
 </body>
-</html>`);
+</html>`
+        });
     }
 });
 
 // Handle GET requests to addon endpoint
 app.get('/addon/event', (req, res) => {
-    res.removeHeader('X-Frame-Options');
-    res.set('Content-Type', 'text/html; charset=utf-8');
-    res.send(`<!DOCTYPE html>
+    // Return JSON with eventResponse for ServiceM8 format
+    res.json({
+        eventResponse: `<!DOCTYPE html>
 <html>
-<head><title>GET Request</title></head>
+<head>
+    <title>GET Request</title>
+    <link rel="stylesheet" href="https://platform.servicem8.com/sdk/1.0/sdk.css">
+    <script src="https://platform.servicem8.com/sdk/1.0/sdk.js"></script>
+</head>
 <body>
     <h1>⚠️ GET Request Detected</h1>
     <p>ServiceM8 should send POST requests with JWT tokens to this endpoint.</p>
     <p>App Secret: ${APP_SECRET ? 'Configured ✅' : 'Missing ❌'}</p>
+    <script>
+        var client = SMClient.init();
+        client.resizeWindow(500, 300);
+    </script>
 </body>
-</html>`);
+</html>`
+    });
 });
 
 // Serve icon
