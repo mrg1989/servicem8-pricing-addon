@@ -10,7 +10,7 @@ app.use(bodyParser.text()); // For JWT tokens from ServiceM8
 // Get App Secret for authentication
 const APP_SECRET = process.env.SERVICEM8_APP_SECRET;
 
-console.log('=== HELLO WORLD ADDON ===');
+console.log('=== HELLO WORLD ADDON v2 ===');
 console.log('App Secret:', APP_SECRET ? 'YES ✅' : 'NO ❌');
 
 // MAIN ADDON ENDPOINT - exactly like ServiceM8 example
