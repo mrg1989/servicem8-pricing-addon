@@ -1,14 +1,15 @@
 require('./config');
 const express = require('express');
 const bodyParser = require('body-parser');
+const jwt = require('jsonwebtoken');
 const path = require('path');
 
 const app = express();
 app.use(bodyParser.json());
-app.use(bodyParser.text());
+app.use(bodyParser.text()); // For JWT tokens
 
-// Simple HTML response for EVERYTHING
-const createTestPage = (title, message, details = '') => `
+// Simple Hello World HTML
+const createSimpleHTML = (title, message) => `
 <!DOCTYPE html>
 <html>
 <head>
@@ -18,130 +19,107 @@ const createTestPage = (title, message, details = '') => `
     <style>
         body { 
             font-family: Arial, sans-serif; 
-            padding: 20px; 
-            background: #f5f5f5;
+            padding: 40px; 
+            text-align: center;
+            background: #f8f9fa;
         }
         .container {
             background: white;
-            padding: 30px;
+            padding: 40px;
             border-radius: 8px;
-            max-width: 600px;
+            max-width: 500px;
             margin: 0 auto;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
-        .success { background: #d4edda; color: #155724; padding: 15px; border-radius: 5px; margin: 20px 0; }
-        .info { background: #e7f3ff; color: #0c5460; padding: 15px; border-radius: 5px; margin: 20px 0; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; }
-        select, input { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
-        .btn { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; }
+        h1 { color: #28a745; margin-bottom: 20px; }
+        p { color: #666; line-height: 1.6; }
+        .auth-info { 
+            background: #e7f3ff; 
+            padding: 15px; 
+            border-radius: 5px; 
+            margin-top: 20px; 
+            font-size: 12px;
+            text-align: left;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>${title}</h1>
-        <div class="success">${message}</div>
-        ${details}
-        
-        <h2>Job Pricing Calculator</h2>
-        <form>
-            <div class="form-group">
-                <label>Job Type:</label>
-                <select name="jobType">
-                    <option value="plumbing">Plumbing - £120/hour</option>
-                    <option value="electrical">Electrical - £150/hour</option>
-                    <option value="hvac">HVAC - £130/hour</option>
-                    <option value="general">General - £100/hour</option>
-                </select>
-            </div>
-            
-            <div class="form-group">
-                <label>Estimated Hours:</label>
-                <input type="number" name="hours" value="2" min="0.5" step="0.5">
-            </div>
-            
-            <button type="button" class="btn" onclick="alert('✅ Addon is working! ServiceM8 successfully loaded this page.')">
-                Calculate Price
-            </button>
-        </form>
-        
-        <div class="info">
-            <strong>✅ SUCCESS!</strong> If you can see this page, your ServiceM8 addon is working correctly!
-        </div>
+        <h1>✅ ${title}</h1>
+        <p>${message}</p>
+        <p>ServiceM8 addon is working correctly!</p>
     </div>
 </body>
 </html>
 `;
 
-// Return HTML for ALL requests - no JSON anywhere
-app.get('/', (req, res) => {
-    // Ensure iframe compatibility
-    res.removeHeader('X-Frame-Options');
-    res.set('Content-Type', 'text/html; charset=utf-8');
-    res.set('Cache-Control', 'no-cache');
-    
-    res.send(createTestPage(
-        '🏠 ServiceM8 Addon Home', 
-        'Addon server is running!',
-        '<p>This is the main page. ServiceM8 should call <code>/addon/event</code> for button clicks.</p>'
-    ));
-});
-
-app.post('/addon/event', (req, res) => {
-    // Ensure iframe compatibility
-    res.removeHeader('X-Frame-Options');
-    res.set('Content-Type', 'text/html; charset=utf-8');
-    res.set('Cache-Control', 'no-cache');
-    
-    res.send(createTestPage(
-        '🎯 Calculate Job Pricing', 
-        'ServiceM8 successfully called the addon!',
-        `<div class="info">
-            <strong>Debug Info:</strong><br>
-            Request method: POST<br>
-            Endpoint: /addon/event<br>
-            Body type: ${typeof req.body}<br>
-            Content: ${JSON.stringify(req.body).substring(0, 100)}...
-        </div>`
-    ));
-});
-
-app.get('/addon/event', (req, res) => {
-    // Ensure iframe compatibility
-    res.removeHeader('X-Frame-Options');
-    res.set('Content-Type', 'text/html; charset=utf-8');
-    res.set('Cache-Control', 'no-cache');
-    
-    res.send(createTestPage(
-        '⚠️ GET Request to /addon/event', 
-        'ServiceM8 sent a GET request (should be POST)',
-        '<p>ServiceM8 should send POST requests to this endpoint for button clicks.</p>'
-    ));
-});
-
-// Handle icon
+// Handle icon first
 app.get('/icon.png', (req, res) => {
     res.sendFile(path.join(__dirname, 'icon.png'));
 });
 
-// Catch all other requests with HTML
+// Main addon endpoint that ServiceM8 calls
+app.post('/addon/event', (req, res) => {
+    try {
+        let eventData = null;
+        let authInfo = 'No authentication data';
+        
+        // Try to parse JWT token from ServiceM8
+        if (typeof req.body === 'string' && req.body.split('.').length === 3) {
+            try {
+                const appSecret = process.env.SERVICEM8_APP_SECRET;
+                if (appSecret) {
+                    eventData = jwt.verify(req.body, appSecret);
+                    authInfo = `Authenticated user: ${eventData.auth?.staffUUID || 'Unknown'}`;
+                } else {
+                    // For testing without secret
+                    const parts = req.body.split('.');
+                    const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString());
+                    eventData = payload;
+                    authInfo = `Test mode - Staff: ${eventData.auth?.staffUUID || 'Unknown'}`;
+                }
+            } catch (jwtError) {
+                authInfo = `JWT error: ${jwtError.message}`;
+            }
+        } else if (req.body) {
+            eventData = req.body;
+            authInfo = 'Received non-JWT data';
+        }
+        
+        const html = createSimpleHTML(
+            'Hello World!',
+            'ServiceM8 successfully called this addon!'
+        ).replace('</div>', `
+            <div class="auth-info">
+                <strong>Auth Info:</strong> ${authInfo}<br>
+                <strong>Job UUID:</strong> ${eventData?.eventArgs?.jobUUID || eventData?.job?.uuid || 'N/A'}
+            </div>
+        </div>`);
+        
+        res.removeHeader('X-Frame-Options');
+        res.set('Content-Type', 'text/html; charset=utf-8');
+        res.send(html);
+        
+    } catch (error) {
+        console.error('Addon error:', error);
+        res.removeHeader('X-Frame-Options');
+        res.set('Content-Type', 'text/html; charset=utf-8');
+        res.send(createSimpleHTML('Error', 'Something went wrong, but addon is still working!'));
+    }
+});
+
+// Return simple HTML for ALL other requests
 app.all('*', (req, res) => {
-    // Ensure iframe compatibility
     res.removeHeader('X-Frame-Options');
     res.set('Content-Type', 'text/html; charset=utf-8');
-    res.set('Cache-Control', 'no-cache');
-    
-    res.send(createTestPage(
-        `📍 ${req.method} ${req.path}`, 
-        'ServiceM8 called an unexpected URL',
-        `<div class="info">
-            <strong>ServiceM8 called:</strong> ${req.method} ${req.path}<br>
-            <strong>Expected:</strong> POST /addon/event<br>
-            <strong>Your Callback URL should be:</strong> https://servicem8-pricing-addon.onrender.com/addon/event
-        </div>`
-    ));
+    res.send(createSimpleHTML('Hello World!', 'ServiceM8 addon is running'));
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`HTML-only addon server running on port ${PORT}`);
+    console.log(`Simple ServiceM8 addon running on port ${PORT}`);
+    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`App ID: ${process.env.SERVICEM8_APP_ID || 'Not set'}`);
+    console.log(`App Secret configured: ${process.env.SERVICEM8_APP_SECRET ? 'Yes' : 'No'}`);
+    console.log(`Callback URL should be: https://servicem8-pricing-addon.onrender.com/addon/event`);
 });
