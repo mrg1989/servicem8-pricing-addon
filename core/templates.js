@@ -73,10 +73,10 @@ class ServiceM8Templates {
             </head>
             <body>
                 <div class="container">
-                    <h1>✅ ServiceM8 Staff Pricing Calculator</h1>
+                    <h1>🛡️ ServiceM8 Staff Pricing Calculator v2.0 (Protected Core)</h1>
                     
                     <div class="success">
-                        Successfully connected to ServiceM8! This addon is working correctly.
+                        🛡️ Successfully connected to ServiceM8! Protected Core v2.0 is working correctly.
                     </div>
                     
                     <h2>📋 Calculate Job Pricing</h2>
