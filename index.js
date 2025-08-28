@@ -618,6 +618,130 @@ app.get('/icon.png', (req, res) => {
     res.sendFile(path.join(__dirname, 'icon.png'));
 });
 
+// OAuth endpoints for ServiceM8 activation
+app.get('/oauth/start', (req, res) => {
+    // This is where ServiceM8 sends users to start OAuth
+    const accountUuid = req.query.account_uuid;
+    const staffUuid = req.query.staff_uuid;
+    
+    console.log('OAuth start:', { accountUuid, staffUuid });
+    
+    // In a real implementation, you'd store these and redirect to ServiceM8 OAuth
+    // For now, we'll simulate a successful OAuth completion
+    res.redirect(`/oauth/complete?account_uuid=${accountUuid}&staff_uuid=${staffUuid}`);
+});
+
+app.get('/oauth/complete', (req, res) => {
+    // This simulates successful OAuth completion
+    const accountUuid = req.query.account_uuid;
+    const staffUuid = req.query.staff_uuid;
+    
+    console.log('OAuth complete:', { accountUuid, staffUuid });
+    
+    res.send(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Staff Pricing Calculator - Activated</title>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <style>
+                body { font-family: Arial, sans-serif; padding: 40px; text-align: center; background: #f5f5f5; }
+                .success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; padding: 20px; border-radius: 5px; margin: 20px 0; }
+            </style>
+            <script>
+                // Close window and notify ServiceM8 of successful activation
+                window.addEventListener('load', function() {
+                    setTimeout(function() {
+                        window.close();
+                    }, 2000);
+                });
+            </script>
+        </head>
+        <body>
+            <h1>🎉 Staff Pricing Calculator</h1>
+            <div class="success">
+                <h2>Successfully Activated!</h2>
+                <p>Your addon is now active. Look for "Calculate Pricing" buttons on job cards.</p>
+                <p><em>This window will close automatically...</em></p>
+            </div>
+        </body>
+        </html>
+    `);
+});
+
+// Addon activation endpoint
+app.get('/activate', (req, res) => {
+    // ServiceM8 sends activation parameters
+    const accountUuid = req.query.account_uuid;
+    const staffUuid = req.query.staff_uuid;
+    
+    console.log('Activation request received:', { accountUuid, staffUuid });
+    
+    res.send(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Staff Pricing Calculator - Activated</title>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <style>
+                body { font-family: Arial, sans-serif; padding: 40px; text-align: center; background: #f5f5f5; }
+                .success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; padding: 20px; border-radius: 5px; margin: 20px 0; }
+                .btn { background: #007bff; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block; margin: 10px; }
+                .btn:hover { background: #0056b3; }
+            </style>
+            <script>
+                // Notify ServiceM8 that activation is complete
+                window.addEventListener('load', function() {
+                    if (window.parent && window.parent !== window) {
+                        // Send message to ServiceM8 parent window
+                        window.parent.postMessage({
+                            type: 'addon_activated',
+                            success: true,
+                            message: 'Staff Pricing Calculator activated successfully'
+                        }, '*');
+                        
+                        // Auto-close after 3 seconds
+                        setTimeout(function() {
+                            window.parent.postMessage({
+                                type: 'close_modal'
+                            }, '*');
+                        }, 3000);
+                    }
+                });
+            </script>
+        </head>
+        <body>
+            <h1>🎉 Staff Pricing Calculator</h1>
+            <div class="success">
+                <h2>Successfully Activated!</h2>
+                <p>The Staff Pricing Calculator addon has been activated in your ServiceM8 account.</p>
+                <p><strong>You can now see "Calculate Pricing" buttons on your job cards!</strong></p>
+            </div>
+            
+            <h3>What's Next?</h3>
+            <p>Look for the "Calculate Pricing" button on any job card to automatically calculate pricing based on:</p>
+            <ul style="text-align: left; max-width: 400px; margin: 0 auto;">
+                <li>Job complexity (Simple, Medium, Complex)</li>
+                <li>Urgency level (Standard, Urgent, Emergency)</li>
+                <li>Timing (Business hours, After hours, Weekend)</li>
+                <li>Estimated duration</li>
+            </ul>
+            
+            <div style="margin-top: 30px;">
+                <a href="/pricing-form" class="btn">Test Pricing Calculator</a>
+                <a href="/config" class="btn">View Pricing Rules</a>
+            </div>
+            
+            <p style="color: #666; margin-top: 30px;">
+                <small>This window will close automatically. You can now return to ServiceM8 and check your job cards.</small>
+            </p>
+        </body>
+        </html>
+    `);
+});
+
 // Serve manifest file
 app.get('/manifest.json', (req, res) => {
     res.sendFile(path.join(__dirname, 'manifest.json'));
