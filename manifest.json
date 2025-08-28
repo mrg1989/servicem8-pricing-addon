@@ -30,10 +30,9 @@
       "object": "job",
       "fields": [
         "job_address",
-        "billing_address",
-        "generated_job_id",
         "job_description",
-        "total_cost"
+        "generated_job_id",
+        "status"
       ]
     }
   ]
