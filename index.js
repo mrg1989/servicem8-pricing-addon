@@ -615,14 +615,7 @@ app.post('/addon/event', async (req, res) => {
 
 // Serve addon icon
 app.get('/icon.png', (req, res) => {
-    // Send a simple SVG icon as PNG alternative
-    res.setHeader('Content-Type', 'image/svg+xml');
-    res.send(`
-        <svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-            <rect width="64" height="64" fill="#007bff" rx="8"/>
-            <text x="32" y="40" font-family="Arial, sans-serif" font-size="32" fill="white" text-anchor="middle">£</text>
-        </svg>
-    `);
+    res.sendFile(path.join(__dirname, 'icon.png'));
 });
 
 // Serve manifest file

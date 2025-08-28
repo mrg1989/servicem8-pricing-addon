@@ -5,35 +5,27 @@
   "supportURL": "https://github.com/mrg1989/servicem8-pricing-addon",
   "supportEmail": "marvin@freeflo.co.uk",
   "oauth": {
-    "scope": "read_jobs write_jobs read_clients"
+    "scope": "read_jobs manage_jobs read_customers"
   },
-  "actions": [
-    {
-      "name": "Calculate Pricing",
-      "type": "online",
-      "entity": "job",
-      "iconURL": "https://servicem8-pricing-addon.onrender.com/icon.png",
-      "event": "calculate_job_pricing",
-      "location": "modal"
-    }
-  ],
-  "menuItems": [
-    {
-      "name": "Pricing Calculator",
-      "type": "addon",
-      "iconURL": "https://servicem8-pricing-addon.onrender.com/icon.png",
-      "event": "pricing_calculator_menu"
-    }
-  ],
-  "webhooks": [
-    {
-      "object": "job",
-      "fields": [
-        "job_address",
-        "job_description",
-        "generated_job_id",
-        "status"
-      ]
-    }
-  ]
+  "actions": [{
+    "name": "Calculate Pricing",
+    "type": "online",
+    "entity": "job",
+    "iconURL": "https://servicem8-pricing-addon.onrender.com/icon.png",
+    "event": "calculate_job_pricing",
+    "location": "modal"
+  }],
+  "menuItems": [{
+    "name": "Pricing Calculator",
+    "type": "addon",
+    "iconURL": "https://servicem8-pricing-addon.onrender.com/icon.png",
+    "event": "pricing_calculator_menu"
+  }],
+  "webhooks": [{
+    "object": "job",
+    "fields": [
+      "job_address",
+      "billing_address"
+    ]
+  }]
 }
