@@ -80,6 +80,23 @@ app.post('/webhook', async (req, res) => {
     }
 });
 
+// Home page endpoint
+app.get('/', (req, res) => {
+    res.json({
+        message: 'ServiceM8 Staff Pricing Addon',
+        version: '1.0.0',
+        status: 'Running',
+        endpoints: {
+            config: '/config',
+            webhook: '/webhook',
+            pricing_form: '/pricing-form',
+            test: '/test',
+            calculate: '/calculate-cost'
+        },
+        documentation: 'https://github.com/mrg1989/servicem8-pricing-addon'
+    });
+});
+
 // Test page endpoint - for testing without ServiceM8
 app.get('/test', (req, res) => {
     const fs = require('fs');
