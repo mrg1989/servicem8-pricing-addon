@@ -2,10 +2,10 @@
   "name": "servicem8-staff-pricing-addon",
   "version": "1.0.0",
   "description": "ServiceM8 addon for staff pricing logic",
-  "main": "simple.js",
+  "main": "index.js",
   "scripts": {
-    "start": "node simple.js",
-    "dev": "nodemon simple.js"
+    "start": "node index.js",
+    "dev": "nodemon index.js"
   },
   "dependencies": {
     "axios": "^1.11.0",

@@ -8,8 +8,12 @@ const app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.text()); // For JWT tokens
 
-// Simple Hello World HTML
-const createSimpleHTML = (title, message) => `
+// Get environment variables
+const APP_ID = process.env.SERVICEM8_APP_ID;
+const APP_SECRET = process.env.SERVICEM8_APP_SECRET;
+
+// Simple HTML helper
+const createHTML = (title, content) => `
 <!DOCTYPE html>
 <html>
 <head>
@@ -19,7 +23,7 @@ const createSimpleHTML = (title, message) => `
     <style>
         body { 
             font-family: Arial, sans-serif; 
-            padding: 40px; 
+            padding: 20px; 
             text-align: center;
             background: #f8f9fa;
         }
@@ -41,17 +45,16 @@ const createSimpleHTML = (title, message) => `
             font-size: 12px;
             text-align: left;
         }
+        .success { background: #d4edda; color: #155724; padding: 15px; border-radius: 5px; margin: 20px 0; }
+        .error { background: #f8d7da; color: #721c24; padding: 15px; border-radius: 5px; margin: 20px 0; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>✅ ${title}</h1>
-        <p>${message}</p>
-        <p>ServiceM8 addon is working correctly!</p>
+        ${content}
     </div>
 </body>
-</html>
-`;
+</html>`;
 
 // Handle icon first
 app.get('/icon.png', (req, res) => {
@@ -61,65 +64,106 @@ app.get('/icon.png', (req, res) => {
 // Main addon endpoint that ServiceM8 calls
 app.post('/addon/event', (req, res) => {
     try {
+        console.log('=== ServiceM8 Addon Event ===');
+        console.log('Headers:', req.headers);
+        console.log('Body type:', typeof req.body);
+        console.log('Body:', req.body);
+        console.log('APP_ID:', APP_ID ? 'Set' : 'Missing');
+        console.log('APP_SECRET:', APP_SECRET ? 'Set' : 'Missing');
+        
         let eventData = null;
         let authInfo = 'No authentication data';
         
         // Try to parse JWT token from ServiceM8
         if (typeof req.body === 'string' && req.body.split('.').length === 3) {
             try {
-                const appSecret = process.env.SERVICEM8_APP_SECRET;
-                if (appSecret) {
-                    eventData = jwt.verify(req.body, appSecret);
-                    authInfo = `Authenticated user: ${eventData.auth?.staffUUID || 'Unknown'}`;
+                if (APP_SECRET) {
+                    // Verify JWT with app secret
+                    eventData = jwt.verify(req.body, APP_SECRET);
+                    authInfo = `✅ JWT verified with APP_SECRET`;
+                    console.log('JWT verified successfully:', eventData);
                 } else {
-                    // For testing without secret
+                    // Decode without verification for testing
                     const parts = req.body.split('.');
                     const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString());
                     eventData = payload;
-                    authInfo = `Test mode - Staff: ${eventData.auth?.staffUUID || 'Unknown'}`;
+                    authInfo = `⚠️ JWT decoded without verification (missing APP_SECRET)`;
+                    console.log('JWT decoded without verification:', eventData);
                 }
             } catch (jwtError) {
-                authInfo = `JWT error: ${jwtError.message}`;
+                console.log('JWT error:', jwtError.message);
+                authInfo = `❌ JWT verification failed: ${jwtError.message}`;
+                eventData = { error: 'JWT verification failed' };
             }
         } else if (req.body) {
             eventData = req.body;
             authInfo = 'Received non-JWT data';
         }
         
-        const html = createSimpleHTML(
-            'Hello World!',
-            'ServiceM8 successfully called this addon!'
-        ).replace('</div>', `
+        const content = `
+            <h1>✅ Hello ServiceM8!</h1>
+            <div class="success">ServiceM8 addon is working correctly!</div>
+            <p>This page loaded successfully in the iframe.</p>
+            
             <div class="auth-info">
-                <strong>Auth Info:</strong> ${authInfo}<br>
-                <strong>Job UUID:</strong> ${eventData?.eventArgs?.jobUUID || eventData?.job?.uuid || 'N/A'}
+                <strong>🔧 Environment Check:</strong><br>
+                APP_ID: ${APP_ID ? 'Set ✅' : 'Missing ❌'}<br>
+                APP_SECRET: ${APP_SECRET ? 'Set ✅' : 'Missing ❌'}<br><br>
+                
+                <strong>🔐 Auth Status:</strong> ${authInfo}<br>
+                <strong>📋 Job UUID:</strong> ${eventData?.eventArgs?.jobUUID || eventData?.job?.uuid || 'N/A'}<br>
+                <strong>👤 Staff UUID:</strong> ${eventData?.auth?.staffUUID || 'N/A'}<br>
+                <strong>🏢 Account UUID:</strong> ${eventData?.auth?.accountUUID || 'N/A'}<br>
+                <strong>⏰ Timestamp:</strong> ${new Date().toISOString()}
             </div>
-        </div>`);
+        `;
         
         res.removeHeader('X-Frame-Options');
         res.set('Content-Type', 'text/html; charset=utf-8');
-        res.send(html);
+        res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.send(createHTML('ServiceM8 Addon Working!', content));
         
     } catch (error) {
         console.error('Addon error:', error);
         res.removeHeader('X-Frame-Options');
         res.set('Content-Type', 'text/html; charset=utf-8');
-        res.send(createSimpleHTML('Error', 'Something went wrong, but addon is still working!'));
+        res.send(createHTML('Error', `
+            <h1>❌ Error</h1>
+            <div class="error">Something went wrong: ${error.message}</div>
+            <p>But the addon is still responding with HTML!</p>
+        `));
     }
+});
+
+// GET requests for testing
+app.get('/addon/event', (req, res) => {
+    res.removeHeader('X-Frame-Options');
+    res.set('Content-Type', 'text/html; charset=utf-8');
+    res.send(createHTML('GET Request', `
+        <h1>⚠️ GET Request</h1>
+        <p>ServiceM8 sent a GET request. It should send POST requests to this endpoint.</p>
+        <div class="auth-info">
+            APP_ID: ${APP_ID ? 'Set ✅' : 'Missing ❌'}<br>
+            APP_SECRET: ${APP_SECRET ? 'Set ✅' : 'Missing ❌'}
+        </div>
+    `));
 });
 
 // Return simple HTML for ALL other requests
 app.all('*', (req, res) => {
     res.removeHeader('X-Frame-Options');
     res.set('Content-Type', 'text/html; charset=utf-8');
-    res.send(createSimpleHTML('Hello World!', 'ServiceM8 addon is running'));
+    res.send(createHTML('ServiceM8 Addon', `
+        <h1>🏠 ServiceM8 Addon Home</h1>
+        <p>Endpoint: ${req.method} ${req.path}</p>
+        <p>Environment variables configured: ${APP_ID && APP_SECRET ? 'Yes ✅' : 'No ❌'}</p>
+    `));
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`Simple ServiceM8 addon running on port ${PORT}`);
-    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`App ID: ${process.env.SERVICEM8_APP_ID || 'Not set'}`);
-    console.log(`App Secret configured: ${process.env.SERVICEM8_APP_SECRET ? 'Yes' : 'No'}`);
-    console.log(`Callback URL should be: https://servicem8-pricing-addon.onrender.com/addon/event`);
+    console.log(`ServiceM8 addon running on port ${PORT}`);
+    console.log(`APP_ID: ${APP_ID || 'Not set'}`);
+    console.log(`APP_SECRET: ${APP_SECRET ? 'Set' : 'Not set'}`);
+    console.log(`Callback URL: https://servicem8-pricing-addon.onrender.com/addon/event`);
 });
