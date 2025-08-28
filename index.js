@@ -6,10 +6,9 @@ const path = require('path');
 
 const app = express();
 app.use(bodyParser.json());
-app.use(bodyParser.text()); // For JWT tokens
+app.use(bodyParser.text()); // For JWT tokens from ServiceM8
 
-// Get environment variables
-const APP_ID = process.env.SERVICEM8_APP_ID;
+// Get environment variables - ONLY App Secret needed for JWT verification
 const APP_SECRET = process.env.SERVICEM8_APP_SECRET;
 
 // Simple HTML helper
@@ -24,29 +23,21 @@ const createHTML = (title, content) => `
         body { 
             font-family: Arial, sans-serif; 
             padding: 20px; 
-            text-align: center;
             background: #f8f9fa;
         }
         .container {
             background: white;
-            padding: 40px;
+            padding: 30px;
             border-radius: 8px;
-            max-width: 500px;
+            max-width: 600px;
             margin: 0 auto;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
         h1 { color: #28a745; margin-bottom: 20px; }
-        p { color: #666; line-height: 1.6; }
-        .auth-info { 
-            background: #e7f3ff; 
-            padding: 15px; 
-            border-radius: 5px; 
-            margin-top: 20px; 
-            font-size: 12px;
-            text-align: left;
-        }
         .success { background: #d4edda; color: #155724; padding: 15px; border-radius: 5px; margin: 20px 0; }
+        .info { background: #e7f3ff; color: #0c5460; padding: 15px; border-radius: 5px; margin: 20px 0; }
         .error { background: #f8d7da; color: #721c24; padding: 15px; border-radius: 5px; margin: 20px 0; }
+        .debug { background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0; font-size: 12px; }
     </style>
 </head>
 <body>
@@ -56,114 +47,163 @@ const createHTML = (title, content) => `
 </body>
 </html>`;
 
-// Handle icon first
+// Handle icon
 app.get('/icon.png', (req, res) => {
     res.sendFile(path.join(__dirname, 'icon.png'));
 });
 
-// Main addon endpoint that ServiceM8 calls
+// Main addon endpoint - ServiceM8 sends JWT here
 app.post('/addon/event', (req, res) => {
+    console.log('=== ServiceM8 Addon Called ===');
+    console.log('Headers:', req.headers);
+    console.log('Body type:', typeof req.body);
+    console.log('Body length:', req.body ? req.body.length : 0);
+    console.log('App Secret configured:', APP_SECRET ? 'Yes' : 'No');
+    
+    // Remove iframe restrictions - CRITICAL for ServiceM8
+    res.removeHeader('X-Frame-Options');
+    res.set('Content-Type', 'text/html; charset=utf-8');
+    res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    
     try {
-        console.log('=== ServiceM8 Addon Event ===');
-        console.log('Headers:', req.headers);
-        console.log('Body type:', typeof req.body);
-        console.log('Body:', req.body);
-        console.log('APP_ID:', APP_ID ? 'Set' : 'Missing');
-        console.log('APP_SECRET:', APP_SECRET ? 'Set' : 'Missing');
-        
         let eventData = null;
-        let authInfo = 'No authentication data';
+        let authStatus = '';
         
-        // Try to parse JWT token from ServiceM8
-        if (typeof req.body === 'string' && req.body.split('.').length === 3) {
+        // ServiceM8 sends JWT token as request body (as per documentation)
+        if (typeof req.body === 'string' && req.body.includes('.')) {
             try {
                 if (APP_SECRET) {
-                    // Verify JWT with app secret
-                    eventData = jwt.verify(req.body, APP_SECRET);
-                    authInfo = `✅ JWT verified with APP_SECRET`;
+                    // Verify JWT with App Secret using HMAC-SHA256 (as per docs)
+                    eventData = jwt.verify(req.body, APP_SECRET, { algorithms: ['HS256'] });
+                    authStatus = '✅ JWT verified with App Secret';
                     console.log('JWT verified successfully:', eventData);
                 } else {
-                    // Decode without verification for testing
-                    const parts = req.body.split('.');
-                    const payload = JSON.parse(Buffer.from(parts[1], 'base64').toString());
-                    eventData = payload;
-                    authInfo = `⚠️ JWT decoded without verification (missing APP_SECRET)`;
+                    // Decode without verification (for testing)
+                    const decoded = jwt.decode(req.body, { complete: true });
+                    eventData = decoded ? decoded.payload : null;
+                    authStatus = '⚠️ JWT decoded without verification (App Secret missing)';
                     console.log('JWT decoded without verification:', eventData);
                 }
             } catch (jwtError) {
-                console.log('JWT error:', jwtError.message);
-                authInfo = `❌ JWT verification failed: ${jwtError.message}`;
-                eventData = { error: 'JWT verification failed' };
+                console.error('JWT verification failed:', jwtError.message);
+                authStatus = `❌ JWT verification failed: ${jwtError.message}`;
+                // Try to decode anyway for debugging
+                try {
+                    const decoded = jwt.decode(req.body, { complete: true });
+                    eventData = decoded ? decoded.payload : { error: 'Invalid JWT' };
+                } catch (decodeError) {
+                    eventData = { error: 'Cannot decode JWT' };
+                }
             }
-        } else if (req.body) {
-            eventData = req.body;
-            authInfo = 'Received non-JWT data';
+        } else {
+            // Handle non-JWT requests
+            eventData = req.body || { error: 'No data received' };
+            authStatus = 'No JWT token received';
         }
         
+        // Extract data based on ServiceM8 event structure from documentation
+        const jobUUID = eventData?.eventArgs?.jobUUID || 'N/A';
+        const companyUUID = eventData?.eventArgs?.companyUUID || 'N/A';
+        const staffUUID = eventData?.auth?.staffUUID || 'N/A';
+        const accountUUID = eventData?.auth?.accountUUID || 'N/A';
+        const eventName = eventData?.eventName || 'N/A';
+        const accessToken = eventData?.auth?.accessToken || 'N/A';
+        
         const content = `
-            <h1>✅ Hello ServiceM8!</h1>
-            <div class="success">ServiceM8 addon is working correctly!</div>
-            <p>This page loaded successfully in the iframe.</p>
+            <h1>✅ ServiceM8 Addon Working!</h1>
+            <div class="success">
+                Successfully received and processed ServiceM8 event!
+            </div>
             
-            <div class="auth-info">
-                <strong>🔧 Environment Check:</strong><br>
-                APP_ID: ${APP_ID ? 'Set ✅' : 'Missing ❌'}<br>
-                APP_SECRET: ${APP_SECRET ? 'Set ✅' : 'Missing ❌'}<br><br>
-                
-                <strong>🔐 Auth Status:</strong> ${authInfo}<br>
-                <strong>📋 Job UUID:</strong> ${eventData?.eventArgs?.jobUUID || eventData?.job?.uuid || 'N/A'}<br>
-                <strong>👤 Staff UUID:</strong> ${eventData?.auth?.staffUUID || 'N/A'}<br>
-                <strong>🏢 Account UUID:</strong> ${eventData?.auth?.accountUUID || 'N/A'}<br>
-                <strong>⏰ Timestamp:</strong> ${new Date().toISOString()}
+            <h2>📋 Job Pricing Calculator</h2>
+            <p>This addon can now calculate pricing for the selected job.</p>
+            
+            <div class="info">
+                <strong>🔐 Authentication:</strong> ${authStatus}<br>
+                <strong>� Event Name:</strong> ${eventName}<br>
+                <strong>🏢 Account UUID:</strong> ${accountUUID}<br>
+                <strong>👤 Staff UUID:</strong> ${staffUUID}<br>
+                <strong>📄 Job UUID:</strong> ${jobUUID}<br>
+                <strong>� Company UUID:</strong> ${companyUUID}<br>
+                <strong>🔑 Access Token:</strong> ${accessToken !== 'N/A' ? accessToken.substring(0, 20) + '...' : 'N/A'}
+            </div>
+            
+            <div class="debug">
+                <strong>🔧 Debug Info:</strong><br>
+                Request Method: ${req.method}<br>
+                Content-Type: ${req.headers['content-type'] || 'Not set'}<br>
+                User-Agent: ${req.headers['user-agent'] || 'Not set'}<br>
+                Body Type: ${typeof req.body}<br>
+                Timestamp: ${new Date().toISOString()}
             </div>
         `;
         
-        res.removeHeader('X-Frame-Options');
-        res.set('Content-Type', 'text/html; charset=utf-8');
-        res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
-        res.send(createHTML('ServiceM8 Addon Working!', content));
+        res.send(createHTML('ServiceM8 Pricing Addon', content));
         
     } catch (error) {
         console.error('Addon error:', error);
-        res.removeHeader('X-Frame-Options');
-        res.set('Content-Type', 'text/html; charset=utf-8');
         res.send(createHTML('Error', `
             <h1>❌ Error</h1>
-            <div class="error">Something went wrong: ${error.message}</div>
+            <div class="error">
+                Something went wrong: ${error.message}
+            </div>
             <p>But the addon is still responding with HTML!</p>
         `));
     }
 });
 
-// GET requests for testing
+// Handle GET requests (for testing)
 app.get('/addon/event', (req, res) => {
     res.removeHeader('X-Frame-Options');
     res.set('Content-Type', 'text/html; charset=utf-8');
-    res.send(createHTML('GET Request', `
-        <h1>⚠️ GET Request</h1>
-        <p>ServiceM8 sent a GET request. It should send POST requests to this endpoint.</p>
-        <div class="auth-info">
-            APP_ID: ${APP_ID ? 'Set ✅' : 'Missing ❌'}<br>
-            APP_SECRET: ${APP_SECRET ? 'Set ✅' : 'Missing ❌'}
+    res.send(createHTML('GET Request Warning', `
+        <h1>⚠️ GET Request Received</h1>
+        <div class="info">
+            ServiceM8 should send POST requests with JWT tokens to this endpoint.
+        </div>
+        <p>If you're seeing this, ServiceM8 is sending GET instead of POST requests.</p>
+        <div class="debug">
+            App Secret configured: ${APP_SECRET ? 'Yes ✅' : 'No ❌'}<br>
+            Endpoint: /addon/event<br>
+            Expected: POST with JWT token
         </div>
     `));
 });
 
-// Return simple HTML for ALL other requests
+// Default route
+app.get('/', (req, res) => {
+    res.removeHeader('X-Frame-Options');
+    res.set('Content-Type', 'text/html; charset=utf-8');
+    res.send(createHTML('ServiceM8 Addon Status', `
+        <h1>🏠 ServiceM8 Pricing Addon</h1>
+        <div class="info">
+            <strong>Status:</strong> Ready for ServiceM8 events<br>
+            <strong>App Secret:</strong> ${APP_SECRET ? 'Configured ✅' : 'Missing ❌'}<br>
+            <strong>Callback URL:</strong> /addon/event
+        </div>
+        <p>This is a Web Service Hosted Add-on that receives JWT tokens from ServiceM8.</p>
+    `));
+});
+
+// Catch all
 app.all('*', (req, res) => {
     res.removeHeader('X-Frame-Options');
     res.set('Content-Type', 'text/html; charset=utf-8');
-    res.send(createHTML('ServiceM8 Addon', `
-        <h1>🏠 ServiceM8 Addon Home</h1>
-        <p>Endpoint: ${req.method} ${req.path}</p>
-        <p>Environment variables configured: ${APP_ID && APP_SECRET ? 'Yes ✅' : 'No ❌'}</p>
+    res.send(createHTML('Unknown Endpoint', `
+        <h1>📍 ${req.method} ${req.path}</h1>
+        <p>This endpoint is not configured for ServiceM8.</p>
+        <div class="info">
+            <strong>Available endpoints:</strong><br>
+            • GET / - Status page<br>
+            • POST /addon/event - Main addon endpoint
+        </div>
     `));
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`ServiceM8 addon running on port ${PORT}`);
-    console.log(`APP_ID: ${APP_ID || 'Not set'}`);
-    console.log(`APP_SECRET: ${APP_SECRET ? 'Set' : 'Not set'}`);
+    console.log(`ServiceM8 Web Service Hosted Add-on running on port ${PORT}`);
+    console.log(`App Secret: ${APP_SECRET ? 'Configured' : 'Missing - set SERVICEM8_APP_SECRET'}`);
     console.log(`Callback URL: https://servicem8-pricing-addon.onrender.com/addon/event`);
+    console.log('Ready to receive JWT tokens from ServiceM8');
 });
