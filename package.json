@@ -1,6 +1,6 @@
 {
   "name": "servicem8-minimal-addon",
-  "version": "1.0.0",
+  "version": "2.0.1",
   "description": "Minimal ServiceM8 addon",
   "main": "index-new.js",
   "scripts": {
